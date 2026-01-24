@@ -2,9 +2,9 @@ import json
 import os
 
 # Chemin vers ton dossier téléchargé
-folder_path_card = 'pokemon-tcg-data/cards/en'
+folder_path_card = 'pokemon-tcg-data-master/cards/en'
 output_file = 'pokemon_db_light.json'
-folder_path_set = 'pokemon-tcg-data/sets'
+folder_path_set = 'pokemon-tcg-data-master/sets'
 combined_data = []
 
 with open(os.path.join(folder_path_set, 'en.json'), 'r', encoding='utf-8') as f:
