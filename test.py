@@ -1,30 +1,42 @@
 import requests
 from bs4 import BeautifulSoup
+from pokemontcgsdk import Card
+from pokemontcgsdk import Set
+from pokemontcgsdk import Type
+from pokemontcgsdk import Supertype
+from pokemontcgsdk import Subtype
+from pokemontcgsdk import Rarity
+from pokemontcgsdk import RestClient
 
-apiKey = 'feef8208-7430-4ced-bab1-ed25a6ca64bb'
-pokemonName = 'Zekrom'
-cardNumber = '172'
+RestClient.configure('12345678-1234-1234-1234-123456789ABC')
+
+
+apiKey = 'API'
+pokemonName = 'Seismitoad'
+cardNumber = '105'
 releaseDate = '2025'
 
 
 def getPokemonID(pokemonName, cardNumber):
-    url = f"https://api.pokemontcg.io/v2/cards?q=name:{pokemonName} number:{cardNumber}" #?language=2
-    headers = {'X-Api-Key': apiKey}
+    card = Card.where(q=f"name:{pokemonName} number:{cardNumber}" )
     
-    output = requests.get(url, headers=headers)
-    resultat_brut = output.json()
+    # Card.where retourne directement les données, pas une URL à requêter
+    if card and len(card) > 0:
+        resultat_brut = [c.to_dict() if hasattr(c, 'to_dict') else c.__dict__ for c in card]
     
-    if len(resultat_brut['data']) > 0:
-        for poke_card in resultat_brut['data']:
-            if releaseDate in poke_card['set']['releaseDate']:
-                card = poke_card
+    if resultat_brut and len(resultat_brut) > 0:
+        for poke_card in resultat_brut:
+            # Adapter pour fonctionner avec les objets retournés par l'API
+            card_data = poke_card['set']['releaseDate'] if isinstance(poke_card, dict) else poke_card.set.releaseDate
+            if releaseDate in str(card_data):
+                card_output = poke_card if isinstance(poke_card, dict) else poke_card.to_dict()
                 
-                print("ID trouvé:", card['id'])
-                print("Nom:", card['name'])
-                print("average sell price:", card['cardmarket']['prices']['averageSellPrice'])
-                print("trendPrice:", card['cardmarket']['prices']['trendPrice'])
-                print("lowPrice:", card['cardmarket']['prices']['lowPrice'])
-                return get_french_price(card['cardmarket']['url'])
+                print("ID trouvé:", card_output['id'])
+                print("Nom:", card_output['name'])
+                print("average sell price:", card_output['cardmarket']['prices']['averageSellPrice'])
+                print("trendPrice:", card_output['cardmarket']['prices']['trendPrice'])
+                print("lowPrice:", card_output['cardmarket']['prices']['lowPrice'])
+                return get_french_price(card_output['cardmarket']['url'])
     else:
         print("Aucune carte trouvée")
         return None
