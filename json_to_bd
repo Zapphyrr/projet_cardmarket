@@ -1,0 +1,39 @@
+import json
+import os
+
+# Chemin vers ton dossier téléchargé
+folder_path_card = 'pokemon-tcg-data/cards/en'
+output_file = 'pokemon_db_light.json'
+folder_path_set = 'pokemon-tcg-data/sets'
+combined_data = []
+
+with open(os.path.join(folder_path_set, 'en.json'), 'r', encoding='utf-8') as f:
+    sets_data = json.load(f)
+# Créer un dictionnaire pour accès rapide aux sets par ID
+sets_dict = {s["id"]: s["releaseDate"] for s in sets_data}
+
+for filename in os.listdir(folder_path_card):
+    if filename.endswith('.json'):
+        # Extraire l'ID du set à partir du nom du fichier (ex: base1.json -> base1)
+        set_id = filename.replace('.json', '')
+        release_date = sets_dict.get(set_id)
+        
+        with open(os.path.join(folder_path_card, filename), 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            for card in data:
+                # On ne garde que l'essentiel pour gagner de la place
+                light_card = {
+                    "id": card.get("id"),
+                    "name": card.get("name"),
+                    "number": card.get("number"),
+                    "set_id": set_id,
+                    "image": card.get("images", {}).get("small"),
+                    "cm_url": card.get("cardmarket", {}).get("url"),
+                    "release_date": release_date
+                }
+                combined_data.append(light_card)
+
+with open(output_file, 'w', encoding='utf-8') as f:
+    json.dump(combined_data, f, indent=2)
+
+print(f"Terminé ! {len(combined_data)} cartes compilées dans {output_file}")
