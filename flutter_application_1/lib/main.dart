@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'scanner_screen.dart';
+import 'tools.dart';
 
 void main() {
   runApp(const MyApp());
@@ -31,7 +33,8 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color.fromARGB(255, 209, 4, 4)),
       ),
-      home: const MyHomePage(title: 'PokéPrice test'),
+      home: const ScannerScreen(),
+     
     );
   }
 }
@@ -85,9 +88,22 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 20),
               // LE BOUTON
               ElevatedButton.icon(
-                onPressed: () {
-                  // On simule l'ID que tu as trouvé (ex: Zekrom)
-                  lancerCardmarket("swsh9-TG05");
+                onPressed: () async {
+                  // 1. On récupère l'URL propre (ça peut prendre 1 seconde, d'où le await)
+                  String? urlPropre = await ouvrirCardmarketPrecis("test", "test"); // Exemple ID Zekrom
+
+                  // 2. Si on a bien récupéré l'URL, on l'ouvre
+                  if (urlPropre != null) {
+                    final Uri uri = Uri.parse(urlPropre);
+                    // On ouvre dans le navigateur externe (Chrome/Safari)
+                    // C'est ici que le Plan B1 prend tout son sens : pas de blocage 403 !
+                    await launchUrl(uri, mode: LaunchMode.externalApplication); 
+                  } else {
+                    // Affiche un petit message d'erreur (SnackBar) si ça échoue
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Impossible de récupérer le lien Cardmarket')),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.open_in_browser),
                 label: const Text('Voir le prix de Zekrom'),
@@ -101,16 +117,5 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
     );
-  }
-
-  // LA FONCTION DE REDIRECTION
-  Future<void> lancerCardmarket(String cardId) async {
-    final String url = "https://prices.pokemontcg.io/cardmarket/$cardId";
-    final Uri uri = Uri.parse(url);
-
-    // Tente d'ouvrir l'URL dans le navigateur externe du téléphone
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      throw Exception('Impossible d\'ouvrir $url');
-    }
   }
 }

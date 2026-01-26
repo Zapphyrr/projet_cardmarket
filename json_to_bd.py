@@ -10,13 +10,16 @@ combined_data = []
 with open(os.path.join(folder_path_set, 'en.json'), 'r', encoding='utf-8') as f:
     sets_data = json.load(f)
 # Créer un dictionnaire pour accès rapide aux sets par ID
-sets_dict = {s["id"]: s["releaseDate"] for s in sets_data}
+sets_dict = {s["id"]: {"releaseDate": s["releaseDate"], "name": s["name"], "ip_set_card": s.get("ptcgoCode")} for s in sets_data}
 
 for filename in os.listdir(folder_path_card):
     if filename.endswith('.json'):
         # Extraire l'ID du set à partir du nom du fichier (ex: base1.json -> base1)
-        set_id = filename.replace('.json', '')
-        release_date = sets_dict.get(set_id)
+        set_name = filename.replace('.json', '')
+        
+        release_date = sets_dict[set_name]["releaseDate"]
+        name_set = sets_dict[set_name]["name"]
+        ip_set_card = sets_dict[set_name]["ip_set_card"]
         
         with open(os.path.join(folder_path_card, filename), 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -26,10 +29,12 @@ for filename in os.listdir(folder_path_card):
                     "id": card.get("id"),
                     "name": card.get("name"),
                     "number": card.get("number"),
-                    "set_id": set_id,
+                    "set_id": set_name,
                     "image": card.get("images", {}).get("small"),
                     "cm_url": card.get("cardmarket", {}).get("url"),
-                    "release_date": release_date
+                    "release_date": release_date,
+                    "set_name": name_set,
+                    "ip_set_card": ip_set_card,
                 }
                 combined_data.append(light_card)
 
