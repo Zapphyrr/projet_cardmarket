@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'tools.dart' as tool;
+import 'scanner_ia.dart' as ia;
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -30,7 +31,9 @@ class _ScannerScreenState extends State<ScannerScreen> {
         _isScanning = true;
       });
 
-      await analyserTexte(_imagePrise!);
+      // Créer une instance du service et appeler identifierCarte
+      final cardMatcher = ia.CardMatcherService();
+      await cardMatcher.identifierCarte(_imagePrise!.path);
     }
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'scanner_screen.dart';
 import 'tools.dart';
+import 'scanner_ia.dart';
 
 void main() {
   runApp(const MyApp());
