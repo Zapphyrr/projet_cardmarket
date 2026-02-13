@@ -6,13 +6,46 @@ import numpy as np
 import base64
 from io import BytesIO
 from PIL import Image
+import os
+import requests
+import gdown
 
 app = Flask(__name__)
 CORS(app)  # Permettre requêtes depuis Flutter
 
+# ========== TÉLÉCHARGEMENT DE LA BASE DEPUIS GOOGLE DRIVE ==========
+def download_database():
+    """Télécharge orb_db.pkl depuis Google Drive si pas présent"""
+    db_path = "orb_db.pkl"
+    
+    # Si le fichier existe déjà, pas besoin de télécharger
+    if os.path.exists(db_path):
+        print(f"✅ Base de données trouvée localement ({os.path.getsize(db_path) / 1024 / 1024:.1f} Mo)")
+        return db_path
+    
+    # ID du fichier Google Drive (à remplacer par le vôtre)
+    # Format URL: https://drive.google.com/file/d/FILE_ID/view
+    GOOGLE_DRIVE_FILE_ID = os.environ.get('ORB_DB_GDRIVE_ID', '1WJwcUECUFG6i60JqZJeXibyx8xDCq3QE')
+    
+    print("📥 Téléchargement de la base depuis Google Drive...")
+    print(f"   File ID: {GOOGLE_DRIVE_FILE_ID}")
+    
+    try:
+        # Téléchargement avec gdown
+        url = f"https://drive.google.com/uc?id={GOOGLE_DRIVE_FILE_ID}"
+        gdown.download(url, db_path, quiet=False)
+        print(f"✅ Base téléchargée ({os.path.getsize(db_path) / 1024 / 1024:.1f} Mo)")
+        return db_path
+    except Exception as e:
+        print(f"❌ Erreur téléchargement: {e}")
+        raise
+
+# Télécharger la base (ou utiliser celle en local)
+db_file = download_database()
+
 # ========== CHARGEMENT DE LA BASE (Au démarrage du serveur) ==========
 print("🔄 Chargement de la base de données...")
-with open("orb_db.pkl", 'rb') as f:
+with open(db_file, 'rb') as f:
     DB_CARTES = pickle.load(f)
 print(f"✅ {len(DB_CARTES)} cartes chargées")
 
