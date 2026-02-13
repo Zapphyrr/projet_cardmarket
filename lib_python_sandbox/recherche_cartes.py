@@ -6,6 +6,10 @@ import requests
 import urllib.parse
 import webbrowser
 
+# ========== CHRONOMÈTRE DÉBUT ==========
+temps_debut_total = time.time()
+print("🕐 Démarrage du programme...")
+
 # Configuration des headers pour les requêtes HTTP
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -21,32 +25,31 @@ headers = {
 }
 
 #Chargement de la base de données des cartes pré-indexées
+t_load_start = time.time()
 print("Chargement BDD ORB...")
 with open("orb_db.pkl", 'rb') as f:
     DB_CARTES = pickle.load(f)
-print(f"✅ {len(DB_CARTES)} cartes chargées.")
+t_load_end = time.time()
+print(f"✅ {len(DB_CARTES)} cartes chargées en {t_load_end - t_load_start:.2f}s")
 
 # Initialisation de l'ia ORB
-orb = cv2.ORB_create(nfeatures=1000) # On peut en prendre un peu plus sur la photo user
+orb = cv2.ORB_create(nfeatures=150) # ALIGNÉ avec la base : 150 features
 
-# --- CONFIGURATION FLANN LSH (La magie de la vitesse) ---
-# Ces paramètres sont optimisés pour les descripteurs binaires (ORB)
+# --- CONFIGURATION FLANN LSH AGRESSIVE ---
+print("Préparation du matcher FLANN agressif...")
+t_matcher_start = time.time()
+
 FLANN_INDEX_LSH = 6
-index_params = dict(algorithm=FLANN_INDEX_LSH,
-                    table_number=6,      # 12
-                    key_size=12,         # 20
-                    multi_probe_level=1) # 2
-search_params = dict(checks=50)      # Nombre de vérifications (plus c'est bas, plus c'est vite)
+index_params = dict(
+    algorithm=FLANN_INDEX_LSH,
+    table_number=2,      # AGRESSIF : 2 tables minimum
+    key_size=8,
+    multi_probe_level=1
+)
+search_params = dict(checks=1)  # AGRESSIF : 1 check seulement
 
-# On prépare le matcher FLANN
-flann = cv2.FlannBasedMatcher(index_params, search_params)
+matcher = cv2.FlannBasedMatcher(index_params, search_params)
 
-# --- ASTUCE DE PERFORMANCE ---
-# Au lieu de boucler en Python (lent), on va créer une SUPER MATRICE
-# contenant TOUS les descripteurs de TOUTES les cartes.
-# C'est technique, mais ça permet à OpenCV de tout calculer en C++ d'un coup.
-
-print("Préparation de l'index FLANN (quelques secondes)...")
 # On empile tous les descripteurs dans une seule grosse matrice
 all_descriptors = []
 map_descriptor_to_card_id = [] # Pour retrouver quelle ligne appartient à quelle carte
@@ -61,10 +64,12 @@ for carte in DB_CARTES:
 # Conversion en super matrice numpy
 super_matrix = np.vstack(all_descriptors)
 
-# On entraîne FLANN sur tout ça d'un coup
-flann.add([super_matrix])
-flann.train()
-print("✅ Index FLANN prêt !")
+# Entraînement FLANN
+matcher.add([super_matrix])
+matcher.train()
+
+t_matcher_end = time.time()
+print(f"✅ FLANN optimisé prêt en {t_matcher_end - t_matcher_start:.2f}s!")
 
 def extraire_infos_carte(card_id):
     if not isinstance(card_id, str):
@@ -99,39 +104,59 @@ def trouver_carte_rapide(chemin_photo):
     img = cv2.imread(chemin_photo, 0)
     if img is None: return "Erreur image"
 
+    # OPTIMISATION 1: Réduire la taille de l'image AGRESSIVE
+    max_dimension = 300  # AGRESSIF : 300px pour vitesse max
+    height, width = img.shape
+    if max(height, width) > max_dimension:
+        scale = max_dimension / max(height, width)
+        new_width = int(width * scale)
+        new_height = int(height * scale)
+        img = cv2.resize(img, (new_width, new_height), interpolation=cv2.INTER_AREA)
+        print(f"Image redimensionnée: {width}x{height} → {new_width}x{new_height}")
+
+    t_orb_start = time.time()
     # Calcul ORB user
     kp_user, des_user = orb.detectAndCompute(img, None)
     if des_user is None: return "Pas de détails détectés"
+    t_orb_end = time.time()
+    print(f"⏱️  ORB extraction: {t_orb_end - t_orb_start:.2f}s")
+    print(f"Descripteurs extraits: {len(des_user)}")
 
-    # RECHERCHE FLANN (KNN=2)
-    # Ça va chercher les correspondances dans la super matrice
-    matches = flann.knnMatch(des_user, k=2)
-
-    # Filtrage (Ratio test)
-    # Moins strict qu'avec SIFT, 0.75 ou 0.8 marche bien pour ORB
+    t_match_start = time.time()
+    # RECHERCHE FLANN ultra-optimisé
+    matches = matcher.knnMatch(des_user, k=2)
+    t_match_end = time.time()
+    print(f"⏱️  FLANN knnMatch: {t_match_end - t_match_start:.2f}s")
+    print(f"Matches trouvés: {len(matches)}")
+    
+    t_filter_start = time.time()
+    # Filtrage (Ratio test) - MOINS STRICT pour avoir plus de matches
     good_matches = []
     for match_pair in matches:
         if len(match_pair) < 2: continue
         m, n = match_pair
-        if m.distance < 0.75 * n.distance:
+        if m.distance < 0.75 * n.distance:  # Moins strict (0.75) pour plus de résultats
             good_matches.append(m)
-
+    t_filter_end = time.time()
+    print(f"⏱️  Filtrage: {t_filter_end - t_filter_start:.2f}s")
+    print(f"Good matches après filtrage: {len(good_matches)}")
+    
+    t_vote_start = time.time()
     # COMPTER LES VOTES
-    # Chaque bon match "vote" pour une carte ID
     votes = {}
     for match in good_matches:
-        # On regarde dans notre map à quelle carte appartient ce descripteur trouvé
         idx_in_super_matrix = match.trainIdx
         card_id = map_descriptor_to_card_id[idx_in_super_matrix]
-        
         votes[card_id] = votes.get(card_id, 0) + 1
-
+    
     # Trouver le gagnant
     if not votes:
         return "Aucune correspondance."
 
     meilleur_id = max(votes, key=votes.get)
     score = votes[meilleur_id]
+    t_vote_end = time.time()
+    print(f"⏱️  Vote: {t_vote_end - t_vote_start:.2f}s")
     
     t_end = time.time()
 
@@ -189,8 +214,33 @@ def ouvrir_cardmarket_precis(nom, numero):
         webbrowser.open(url_finale + "&language=2")
 
 # TEST
-carte_trouvé = trouver_carte_rapide("templates/locklass.png")
-print(trouver_carte_rapide("templates/locklass.png"))
-print(carte_trouvé["carte"])
-print("type de cartes", type(carte_trouvé["carte"]))
-ouvrir_cardmarket_precis(carte_trouvé["carte_infos"]["nom"], carte_trouvé["carte_infos"]["numero"])
+print("\n" + "="*50)
+print("🔍 DÉBUT DE LA RECHERCHE")
+print("="*50)
+t_recherche_start = time.time()
+
+carte_trouvé = trouver_carte_rapide("templates/zeblitz.png")
+
+t_recherche_end = time.time()
+print(f"\n⏱️  Temps recherche: {t_recherche_end - t_recherche_start:.2f}s")
+
+# Vérifier si la recherche a réussi
+if isinstance(carte_trouvé, dict):
+    print(f"📋 Carte trouvée: {carte_trouvé['carte']}")
+    print(f"🎯 Score: {carte_trouvé['score']}")
+    print(f"⚡ Temps interne fonction: {carte_trouvé['temps']}s")
+    
+    t_cardmarket_start = time.time()
+    ouvrir_cardmarket_precis(carte_trouvé["carte_infos"]["nom"], carte_trouvé["carte_infos"]["numero"])
+    t_cardmarket_end = time.time()
+    print(f"🌐 Ouverture Cardmarket: {t_cardmarket_end - t_cardmarket_start:.2f}s")
+else:
+    print(f"❌ ÉCHEC: {carte_trouvé}")
+    print("💡 Essayez d'augmenter les features ou d'ajuster le ratio test")
+
+# ========== CHRONOMÈTRE FIN ==========
+temps_fin_total = time.time()
+temps_total = temps_fin_total - temps_debut_total
+print("\n" + "="*50)
+print(f"⏰ TEMPS TOTAL DU PROGRAMME: {temps_total:.2f}s")
+print("="*50)

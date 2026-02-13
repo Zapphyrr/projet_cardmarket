@@ -1,0 +1,27 @@
+/venv
+.vscode/settings.json
+
+# Large database files
+*.pkl
+*_db.json
+flutter_db.json
+pokemon_db_light.json
+features_db.pkl
+orb_db.pkl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Flutter build
+**/build/
+**/.dart_tool/
+
+# Agent IA - Configuration privée
+agent_config.json
+agent_config.local.json
+.env
+.env.local
+*_private.json
+api_keys.json

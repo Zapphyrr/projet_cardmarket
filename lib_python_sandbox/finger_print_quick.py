@@ -6,7 +6,7 @@ import pickle
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
-orb = cv2.ORB_create(nfeatures=500)
+orb = cv2.ORB_create(nfeatures=150)  # OPTIMISÉ : 150 au lieu de 500 pour vitesse × 3
 
 
 def url_to_image(url):
