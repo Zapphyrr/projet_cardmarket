@@ -6,7 +6,7 @@ import pickle
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
-orb = cv2.ORB_create(nfeatures=100)  # ULTRA-LIGHT : 100 features pour économiser RAM
+orb = cv2.ORB_create(nfeatures=50)  # EXTREME-LIGHT : 50 features pour 1GB RAM
 
 
 def url_to_image(url):
@@ -52,18 +52,18 @@ if __name__ == '__main__':
     df.columns = df.columns.str.strip()
     
     tasks = list(df.iterrows())
-    print("🚀 Démarrage Indexation ORB (Rapide & Léger)...")
+    print("Démarrage Indexation ORB (Rapide & Léger)...")
     
     with ThreadPoolExecutor(max_workers=50) as executor:
         results = list(tqdm(executor.map(process_one_card, tasks), total=len(tasks)))
         
 
     valid_results = [r for r in results if r is not None]
-    print(f"✅ Terminé ! {len(valid_results)} cartes indexées.")
+    print(f"Terminé ! {len(valid_results)} cartes indexées.")
     
     # Sauvegarde
     with open("orb_db.pkl", 'wb') as f:
         pickle.dump(valid_results, f)
     
-    print("💾 Base de données 'orb_db.pkl' créée (devrait faire ~200-300 Mo).")
+    print("Base de données 'orb_db.pkl' créée.")
 

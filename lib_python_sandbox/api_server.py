@@ -49,15 +49,15 @@ with open(db_file, 'rb') as f:
     DB_CARTES = pickle.load(f)
 print(f"✅ {len(DB_CARTES)} cartes chargées")
 
-# Configuration ORB et FLANN
-orb = cv2.ORB_create(nfeatures=150)
+# Configuration ORB et FLANN (ultra-light pour 1GB RAM)
+orb = cv2.ORB_create(nfeatures=50)
 
 FLANN_INDEX_LSH = 6
 index_params = dict(
     algorithm=FLANN_INDEX_LSH,
-    table_number=2,
-    key_size=8,
-    multi_probe_level=1
+    table_number=1,  # Réduit de 2 à 1 pour économiser RAM
+    key_size=6,      # Réduit de 8 à 6
+    multi_probe_level=0  # 0 au lieu de 1
 )
 search_params = dict(checks=1)
 matcher = cv2.FlannBasedMatcher(index_params, search_params)
