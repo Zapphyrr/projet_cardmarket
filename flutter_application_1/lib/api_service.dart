@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class CardRecognitionAPI {
-  // Remplacez par votre URL Render.com après déploiement
-  static const String API_URL = "https://votre-app.onrender.com";
+  // URL Railway déployée
+  static const String API_URL = "https://projectcardmarket-production.up.railway.app";
   
   /// Envoie une image au serveur et retourne les infos de la carte
   static Future<Map<String, dynamic>?> searchCard(File imageFile) async {

@@ -5,9 +5,8 @@ import urllib.parse
 import time
 
 # ========== CONFIGURATION ==========
-# Changez cette URL après avoir déployé sur Render
-API_URL = "http://localhost:5000"  # Temporaire pour test local
-# Après déploiement Render, remplacez par: "https://votre-app.onrender.com"
+# URL de votre API Railway déployée
+API_URL = "https://projectcardmarket-production.up.railway.app"
 
 # Configuration des headers pour Cardmarket
 headers = {
@@ -36,7 +35,7 @@ def trouver_carte_via_api(chemin_photo):
             f"{API_URL}/search",
             json={'image': image_base64},
             headers={'Content-Type': 'application/json'},
-            timeout=30
+            timeout=60  # Augmenté à 60s pour Railway
         )
         
         t_end = time.time()

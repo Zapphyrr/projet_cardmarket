@@ -103,15 +103,18 @@ def health():
 @app.route('/search', methods=['POST'])
 def search_card():
     """Endpoint principal : reçoit image en base64, retourne carte trouvée"""
+    print("🔍 Requête /search reçue")
     try:
         # Récupérer l'image base64 depuis la requête
         data = request.get_json()
         image_base64 = data.get('image')
+        print(f"📦 Image reçue: {len(image_base64) if image_base64 else 0} caractères")
         
         if not image_base64:
             return jsonify({"error": "Image manquante"}), 400
         
         # Décoder l'image base64
+        print("🔄 Décodage image...")
         image_bytes = base64.b64decode(image_base64)
         image = Image.open(BytesIO(image_bytes)).convert('L')  # Convertir en grayscale
         img_array = np.array(image)
@@ -119,6 +122,7 @@ def search_card():
         # Redimensionner si trop grande
         max_dimension = 300
         height, width = img_array.shape
+        print(f"📐 Taille image: {width}x{height}")
         if max(height, width) > max_dimension:
             scale = max_dimension / max(height, width)
             new_width = int(width * scale)
@@ -126,14 +130,19 @@ def search_card():
             img_array = cv2.resize(img_array, (new_width, new_height), interpolation=cv2.INTER_AREA)
         
         # Extraction ORB
+        print("🔍 Extraction features ORB...")
         kp_user, des_user = orb.detectAndCompute(img_array, None)
         if des_user is None:
             return jsonify({"error": "Aucun détail détecté dans l'image"}), 400
+        print(f"✅ {len(des_user)} features extraites")
         
         # Recherche FLANN
+        print("🔎 Recherche FLANN en cours... (peut prendre 10-30s)")
         matches = matcher.knnMatch(des_user, k=2)
+        print(f"✅ FLANN terminé: {len(matches)} matches")
         
         # Filtrage ratio test
+        print("🔄 Filtrage ratio test...")
         good_matches = []
         for match_pair in matches:
             if len(match_pair) < 2:
