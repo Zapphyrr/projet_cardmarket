@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pip install -r lib_python_sandbox/requirements.txt"
+
+[deploy]
+startCommand = "cd lib_python_sandbox && gunicorn api_server:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 4 --worker-class gthread --max-requests 100 --max-requests-jitter 10"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
