@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import 'tools.dart' as tool;
-import 'scanner_ia.dart' as ia;
+import 'api_service.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -19,8 +19,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
   File? _imagePrise;
   bool _isScanning = false;
   String _resultatScan = "Aucune carte scannée";
+  String _scanMode = ""; // "OCR" ou "IA"
+  int? _scoreIA; // Score de confiance de l'IA
 
-  // 1) Prendre une photo puis lancer l'analyse
+  // 1) Prendre une photo (sans lancer l'analyse)
   Future<void> prendrePhoto() async {
     final ImagePicker picker = ImagePicker();
     final XFile? photo = await picker.pickImage(source: ImageSource.camera);
@@ -28,16 +30,78 @@ class _ScannerScreenState extends State<ScannerScreen> {
     if (photo != null) {
       setState(() {
         _imagePrise = File(photo.path);
-        _isScanning = true;
+        _resultatScan = "Photo prise ! Choisissez une méthode de scan.";
+        _scanMode = "";
+        _scoreIA = null;
       });
-
-      // Créer une instance du service et appeler identifierCarte
-      final cardMatcher = ia.CardMatcherService();
-      await cardMatcher.identifierCarte(_imagePrise!.path);
     }
   }
 
-  // 2) Analyse OCR et extraction des infos
+  // 3) Scanner avec OCR (méthode actuelle, rapide)
+  Future<void> scannerAvecOCR() async {
+    if (_imagePrise == null) {
+      setState(() {
+        _resultatScan = "❌ Prenez d'abord une photo !";
+      });
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _scanMode = "OCR";
+      _resultatScan = "🔤 Analyse OCR en cours...";
+    });
+
+    await analyserTexte(_imagePrise!);
+  }
+
+  // 4) Scanner avec IA (API Railway)
+  Future<void> scannerAvecIA() async {
+    if (_imagePrise == null) {
+      setState(() {
+        _resultatScan = "❌ Prenez d'abord une photo !";
+      });
+      return;
+    }
+
+    setState(() {
+      _isScanning = true;
+      _scanMode = "IA";
+      _resultatScan = "Analyse IA en cours...\nCela peut prendre 5-10 secondes.";
+    });
+
+    try {
+      final result = await CardRecognitionAPI.searchCard(_imagePrise!);
+
+      if (result != null && result['success'] == true) {
+        final String nomCarte = result['nom'] ?? '';
+        final String numero = result['numero'] ?? '';
+        final String set = result['set_name'] ?? '';
+        final int score = result['score'] ?? 0;
+
+        setState(() {
+          _isScanning = false;
+          _scoreIA = score;
+          _resultatScan = "✅ Carte trouvwée !\n$nomCarte\n$numero - $set\n🎯 Score: $score";
+        });
+
+        // Ouvrir Cardmarket automatiquement
+        tool.ouvrirCardmarketPrecis(nomCarte, numero);
+      } else {
+        setState(() {
+          _isScanning = false;
+          _resultatScan = "❌ ${result?['error'] ?? 'Carte non trouvée'}\n\n💡 Conseil: Prenez une photo plus nette.";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isScanning = false;
+        _resultatScan = "❌ Erreur: $e";
+      });
+    }
+  }
+
+  // 5) Analyse OCR et extraction des infos
   Future<void> analyserTexte(File image) async {
     final InputImage inputImage = InputImage.fromFile(image);
 
@@ -53,16 +117,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
 
         if (numTrouve != null) {
           final String rechercheNom = idTrouve ?? "Pokemon";
-          _resultatScan = "Analyse réussie !\nRecherche : $rechercheNom $numTrouve";
+          _resultatScan = "✅ Analyse OCR !\nRecherche : $rechercheNom $numTrouve";
           ouvrirCardmarketPrecis(rechercheNom, numTrouve);
         } else {
-          _resultatScan = "Échec : Numéro de carte introuvable.\nEssayez de mieux cadrer le bas.";
+          _resultatScan = "❌ Numéro introuvable.\n\n💡 Essayez le scan IA pour plus de précision.";
         }
       });
     } catch (e) {
       setState(() {
         _isScanning = false;
-        _resultatScan = "Erreur : $e";
+        _resultatScan = "❌ Erreur : $e";
       });
     }
   }
@@ -108,12 +172,45 @@ class _ScannerScreenState extends State<ScannerScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 60.0),
-            child: ElevatedButton.icon(
-              onPressed: prendrePhoto,
-              icon: const Icon(Icons.camera),
-              label: const Text('Scanner une carte'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Column(
+              children: [
+                // Bouton Prendre Photo
+                ElevatedButton.icon(
+                  onPressed: prendrePhoto,
+                  icon: const Icon(Icons.camera),
+                  label: const Text('Prendre une photo'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.blue,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                
+                // Bouton Scan OCR
+                ElevatedButton.icon(
+                  onPressed: _imagePrise == null ? null : scannerAvecOCR,
+                  icon: const Icon(Icons.text_fields),
+                  label: const Text('Scan OCR (Rapide)'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                
+                // Bouton Scan IA
+                ElevatedButton.icon(
+                  onPressed: _imagePrise == null ? null : scannerAvecIA,
+                  icon: const Icon(Icons.psychology),
+                  label: const Text('Scan IA (Précis)'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.deepPurple,
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
             ),
           ),
         ],
@@ -126,7 +223,7 @@ Map<String, String?> extraireInfosPokemon(RecognizedText text) {
   // --- DEBUG ---
   print("Analyse OCR en cours...");
   print("\n========================================");
-  print("👀 CE QUE L'OCR VOIT (Ligne par ligne) :");
+  print("CE QUE L'OCR VOIT (Ligne par ligne) :");
   print("========================================");
   
   // On parcourt tout le texte brut pour l'afficher

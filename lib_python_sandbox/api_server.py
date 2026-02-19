@@ -49,8 +49,8 @@ with open(db_file, 'rb') as f:
     DB_CARTES = pickle.load(f)
 print(f"✅ {len(DB_CARTES)} cartes chargées")
 
-# Configuration ORB et FLANN (ultra-light pour 1GB RAM)
-orb = cv2.ORB_create(nfeatures=30)
+# Configuration ORB et FLANN (optimisé pour précision)
+orb = cv2.ORB_create(nfeatures=80)  # Augmenté de 50 à 80 pour meilleure précision
 
 FLANN_INDEX_LSH = 6
 index_params = dict(
@@ -148,8 +148,8 @@ def search_card():
             if len(match_pair) < 2:
                 continue
             m, n = match_pair
-            # Ratio augmenté de 0.75 à 0.85 pour plus de tolérance
-            if m.distance < 0.85 * n.distance:
+            # Ratio 0.80 = bon compromis entre précision et rappel
+            if m.distance < 0.80 * n.distance:
                 good_matches.append(m)
         
         print(f"✅ {len(good_matches)} good matches après ratio test")
@@ -172,6 +172,16 @@ def search_card():
         # Meilleur match
         meilleur_id = max(votes, key=votes.get)
         score = votes[meilleur_id]
+        
+        # SEUIL MINIMUM : rejeter si score trop faible (évite faux positifs)
+        SCORE_MINIMUM = 8  # Au moins 8 features doivent correspondre
+        if score < SCORE_MINIMUM:
+            print(f"⚠️ Score trop faible: {score} < {SCORE_MINIMUM}")
+            return jsonify({
+                "error": f"Confiance insuffisante (score: {score}/{SCORE_MINIMUM} requis)",
+                "conseil": "Prenez une photo plus nette ou avec meilleur éclairage"
+            }), 404
+        
         infos = extraire_infos_carte(meilleur_id)
         
         # Retour JSON

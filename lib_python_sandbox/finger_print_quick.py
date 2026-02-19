@@ -6,7 +6,7 @@ import pickle
 from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 
-orb = cv2.ORB_create(nfeatures=30)  # EXTREME-LIGHT : 50 features pour 1GB RAM
+orb = cv2.ORB_create(nfeatures=80)  # Augmenté à 80 pour meilleure précision
 
 
 def url_to_image(url):

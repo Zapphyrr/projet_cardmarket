@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class CardRecognitionAPI {
   // URL Railway déployée
-  static const String API_URL = "https://projectcardmarket-production.up.railway.app";
+  static const String API_URL = "https://projetcardmarket-production.up.railway.app/";
   
   /// Envoie une image au serveur et retourne les infos de la carte
   static Future<Map<String, dynamic>?> searchCard(File imageFile) async {
@@ -22,7 +22,7 @@ class CardRecognitionAPI {
         body: jsonEncode({
           'image': base64Image,
         }),
-      ).timeout(const Duration(seconds: 30)); // Timeout 30s
+      ).timeout(const Duration(seconds: 60)); // Timeout 60s (IA peut être lente)
       
       // 3. Traiter la réponse
       if (response.statusCode == 200) {

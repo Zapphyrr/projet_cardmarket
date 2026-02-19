@@ -118,7 +118,7 @@ if __name__ == "__main__":
     # Recherche de carte
     t_total_start = time.time()
     
-    carte_trouvée = trouver_carte_via_api("templates/locklass.png")
+    carte_trouvée = trouver_carte_via_api("templates/zeblitz.png")
     
     if carte_trouvée:
         print("\n" + "="*60)
