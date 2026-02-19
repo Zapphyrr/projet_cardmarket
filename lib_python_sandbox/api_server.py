@@ -50,7 +50,7 @@ with open(db_file, 'rb') as f:
 print(f"✅ {len(DB_CARTES)} cartes chargées")
 
 # Configuration ORB et FLANN (ultra-light pour 1GB RAM)
-orb = cv2.ORB_create(nfeatures=50)
+orb = cv2.ORB_create(nfeatures=30)
 
 FLANN_INDEX_LSH = 6
 index_params = dict(
