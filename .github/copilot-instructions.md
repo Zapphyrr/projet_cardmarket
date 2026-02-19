@@ -388,7 +388,7 @@ for m, n in matches:  # m = best, n = 2nd-best
 2. ✅ Reduced ORB features: 500 → 100 → 50 (database 280MB → 150MB)
 3. ⚠️ Reduce to 30 features (database ~90MB, untested)
 4. ❌ BFMatcher instead of FLANN (assertion error with large DB)
-5. 💵 Upgrade to 2GB RAM ($5/month Railway/DigitalOcean)
+5. 💵 Upgrade to 2GB RAM (Railway $10-12/month, DigitalOcean $25/month)
 
 **Current status:** 50 features works intermittently on Railway 1GB, but unstable under load.
 
@@ -545,7 +545,7 @@ table_number=1, key_size=6, checks=1, multi_probe_level=0
 - [ ] Implement batch processing endpoint (multiple images)
 
 **Low Priority:**
-- [ ] Explore DigitalOcean 2GB droplet ($12/month for better performance)
+- [ ] Explore DigitalOcean 2GB droplet ($25/month for better performance)
 - [ ] Optimize super_matrix construction (lazy loading?)
 - [ ] Add Prometheus metrics endpoint
 - [ ] Implement image preprocessing recommendations (white balance, contrast)
