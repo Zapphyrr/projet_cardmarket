@@ -6,7 +6,7 @@ import time
 
 # ========== CONFIGURATION ==========
 # URL de votre API Railway déployée
-API_URL = "https://projectcardmarket-production.up.railway.app"
+API_URL = "https://projetcardmarket-production.up.railway.app"
 
 # Configuration des headers pour Cardmarket
 headers = {

@@ -148,8 +148,11 @@ def search_card():
             if len(match_pair) < 2:
                 continue
             m, n = match_pair
-            if m.distance < 0.75 * n.distance:
+            # Ratio augmenté de 0.75 à 0.85 pour plus de tolérance
+            if m.distance < 0.85 * n.distance:
                 good_matches.append(m)
+        
+        print(f"✅ {len(good_matches)} good matches après ratio test")
         
         # Comptage votes
         votes = {}
@@ -157,6 +160,11 @@ def search_card():
             idx_in_super_matrix = match.trainIdx
             card_id = map_descriptor_to_card_id[idx_in_super_matrix]
             votes[card_id] = votes.get(card_id, 0) + 1
+        
+        print(f"📊 Votes: {len(votes)} cartes candidates")
+        if votes:
+            top_3 = sorted(votes.items(), key=lambda x: x[1], reverse=True)[:3]
+            print(f"🏆 Top 3: {top_3}")
         
         if not votes:
             return jsonify({"error": "Aucune correspondance trouvée"}), 404
