@@ -4,10 +4,10 @@ import json
 
 
 def crea_bdd():
-    with open('pokemon_db_light.json', 'r', encoding='utf-8') as f:
+    with open('bdd/pokemon_db_light.json', 'r', encoding='utf-8') as f:
         pdb = json.load(f)
         
-    with open ('pokemon_card_bdd.csv', 'a', encoding='utf-8') as f:
+    with open ('bdd/pokemon_card_bdd.csv', 'a', encoding='utf-8') as f:
         for card in pdb:
             name = card.get("name", "").replace('"', '\\"')
             number = card.get("number", "")
@@ -20,7 +20,7 @@ def crea_bdd():
             
             
 def crea_bdd_first_line():
-    with open ('pokemon_card_bdd.csv', 'w', encoding='utf-8') as f:
+    with open ('bdd/pokemon_card_bdd.csv', 'w', encoding='utf-8') as f:
         f.write('name ; number ; set_name ; image ; release_date ; ip_set_card\n')
         
         

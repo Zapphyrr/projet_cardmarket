@@ -174,7 +174,7 @@ def search_card():
         score = votes[meilleur_id]
         
         # SEUIL MINIMUM : rejeter si score trop faible (évite faux positifs)
-        SCORE_MINIMUM = 2  # Au moins 8 features doivent correspondre
+        SCORE_MINIMUM = 1  # Au moins 8 features doivent correspondre
         if score < SCORE_MINIMUM:
             print(f"⚠️ Score trop faible: {score} < {SCORE_MINIMUM}")
             return jsonify({

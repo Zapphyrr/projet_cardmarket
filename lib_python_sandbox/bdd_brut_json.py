@@ -3,7 +3,7 @@ import os
 
 # Chemin vers ton dossier téléchargé
 folder_path_card = '../pokemon-tcg-data-master/cards/en'
-output_file = 'pokemon_db_light.json'
+output_file = 'bdd/pokemon_db_light.json'
 folder_path_set = '../pokemon-tcg-data-master/sets'
 combined_data = []
 
