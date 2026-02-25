@@ -167,6 +167,17 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
+                const SizedBox(height: 10),
+                // Disclaimer
+                const Text(
+                  'Non affilié à Cardmarket',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 30),
               ],
             ),

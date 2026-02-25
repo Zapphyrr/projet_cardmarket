@@ -17,3 +17,8 @@ __pycache__/
 # Flutter build
 **/build/
 **/.dart_tool/
+
+# Android signing (NE JAMAIS COMMIT!)
+key.properties
+*.jks
+*.keystore
