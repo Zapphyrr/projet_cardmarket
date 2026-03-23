@@ -159,7 +159,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ElevatedButton.icon(
                   onPressed: _isScanning ? null : scannerCarte,
                   icon: const Icon(Icons.document_scanner),
-                  label: const Text('Scanner une carte Pokemon'),
+                  label: const Text('Scanner une carte'),
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 55),
                     backgroundColor: Colors.deepPurple,
